@@ -20,16 +20,16 @@ using System;
 using System.Windows;
 using EasyFarm.Infrastructure;
 using EasyFarm.Logging;
-using EasyFarm.Properties;
-using EasyFarm.Parsing;
+using EasyFarm.Persistence;
+using EasyFarm.UserSettings;
 using EasyFarm.ViewModels;
+using Ninject;
 
 namespace EasyFarm
 {
     public partial class App
     {
-        public static AbilityService AbilityService;
-
+        private static AppBoot _appBoot;
         public static Action<App> DefaultInitializer { get; set; } = InitializeApp;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -46,14 +46,13 @@ namespace EasyFarm
             };            
 
             LogViewModel.Write("Resources loaded");
-            AbilityService = new AbilityService("resources");
             LogViewModel.Write("Application starting");
             Logger.Log(new LogEntry(LoggingEventType.Information, "EasyFarm Started ..."));
 
-            var appBoot = new AppBoot(app);
-            appBoot.Initialize();
-            appBoot.Navigate<MasterViewModel>();
-            appBoot.Show();
+            _appBoot = new AppBoot(app);
+            _appBoot.Initialize();
+            _appBoot.Navigate<MasterViewModel>();
+            _appBoot.Show();
         }
 
         /// <summary>
@@ -62,8 +61,16 @@ namespace EasyFarm
         /// <param name="e"></param>
         protected override void OnExit(ExitEventArgs e)
         {
+            var persister = _appBoot.Container.Get<IPersister>();
+            var characterName = ViewModelBase.FFACE?.Player?.Name;
+            var fileName = $"{characterName}.eup";
+
+            if (!String.IsNullOrWhiteSpace(fileName))
+            {
+                persister.Serialize(fileName, Config.Instance);
+            }
+
             LogViewModel.Write("Application exiting");
-            Settings.Default.Save();
         }
     }
 }

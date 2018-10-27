@@ -16,14 +16,16 @@
 // If not, see <http://www.gnu.org/licenses/>.
 // ///////////////////////////////////////////////////////////////////
 using EasyFarm.Classes;
-using EasyFarm.Parsing;
 using EasyFarm.Tests.TestTypes;
 using EasyFarm.Tests.TestTypes.Mocks;
 using MemoryAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EliteMMO.API;
 using Xunit;
+using AbilityType = EasyFarm.Parsing.AbilityType;
+using StatusEffect = MemoryAPI.StatusEffect;
 
 namespace EasyFarm.Tests.Classes
 {
@@ -174,6 +176,27 @@ namespace EasyFarm.Tests.Classes
                 VerifyActionNotUsable();
             }
 
+            [Fact]
+            public void WhenChatLineNotPresent()
+            {
+                _battleAbility.ChatEvent = "test";
+                VerifyActionNotUsable();
+            }
+
+            [Fact]
+            public void WhenChatLineIsTooOld()
+            {
+                // Fixture setup
+                _battleAbility.ChatEvent = "test";
+                _battleAbility.ChatEventPeriod = TimeSpan.FromSeconds(1);
+                MockEliteAPI.Chat.ChatEntries.Enqueue(new EliteAPI.ChatEntry()
+                {
+                    Text = "test",
+                    Timestamp = DateTime.Now.AddMinutes(-1)
+                });
+                VerifyActionNotUsable();
+            }
+
             public void VerifyActionNotUsable()
             {
                 var memoryAPI = FindMemoryApi();
@@ -196,6 +219,23 @@ namespace EasyFarm.Tests.Classes
                 VerifyActionUsable();
             }
 
+            [Fact]
+            public void ChatMessagInTimeFrameIsUsable()
+            {
+                // Fixture setup
+                _battleAbility.ChatEventPeriod = TimeSpan.FromSeconds(1);
+                _battleAbility.ChatEvent = "test";
+                MockEliteAPI.Chat.ChatEntries.Enqueue(new EliteAPI.ChatEntry()
+                {
+                    Timestamp = DateTime.Now,
+                    Text = "test"
+                });
+                // Excercise system
+                VerifyActionUsable();
+                // Verify outcome
+                // Teardown	
+            }
+
             public void VerifyActionUsable()
             {
                 var result = ActionFilters.BuffingFilter(FindMemoryApi(), _battleAbility);
@@ -205,7 +245,7 @@ namespace EasyFarm.Tests.Classes
 
         public IMemoryAPI FindMemoryApi()
         {
-            return new MockEliteAPIAdapter(MockEliteAPI);
+            return MockEliteAPI.AsMemoryApi();
         }
     }
 }

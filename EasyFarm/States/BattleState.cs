@@ -18,8 +18,12 @@
 
 using System.Linq;
 using EasyFarm.Classes;
-using EasyFarm.UserSettings;
 using MemoryAPI;
+using System;
+using EasyFarm.ViewModels;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using EasyFarm.UserSettings;
 
 namespace EasyFarm.States
 {
@@ -46,7 +50,7 @@ namespace EasyFarm.States
             if (!IsFighting) return false;
 
             // target null or dead. 
-            if (!UnitFilters.MobFilter(EliteApi, Target)) return false;
+            if (!UnitFilters.MobFilter(EliteApi, Target, Config)) return false;
 
             // Engage is enabled and we are not engaged. We cannot proceed. 
             if (Config.IsEngageEnabled) return EliteApi.Player.Status.Equals(Status.Fighting);
@@ -63,11 +67,28 @@ namespace EasyFarm.States
 
         public override void Run()
         {
+            ShouldRecycleBattleStateCheck();
+            
             // Cast only one action to prevent blocking curing. 
             var action = Config.BattleLists["Battle"].Actions
                 .FirstOrDefault(x => ActionFilters.TargetedFilter(EliteApi, x, Target));
             if (action == null) return;
             Executor.UseTargetedActions(new[] {action}, Target);
+        }
+
+        private void ShouldRecycleBattleStateCheck()
+        {
+            var chatEntries = EliteApi.Chat.ChatEntries.ToList();
+            var invalidTargetPattern = new Regex("Unable to see");
+
+            List<EliteMMO.API.EliteAPI.ChatEntry> matches = chatEntries
+                .Where(x => invalidTargetPattern.IsMatch(x.Text)).ToList();
+
+            foreach (EliteMMO.API.EliteAPI.ChatEntry m in matches.Where(x => x.Timestamp.ToString() == DateTime.Now.ToString()))
+            {
+                EliteApi.Windower.SendString(Constants.AttackOff);
+                LogViewModel.Write("Recycled battle stance to properly engage the target.");
+            }
         }
     }
 }
