@@ -1,12 +1,12 @@
 ﻿// ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-// 
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,6 +29,7 @@ namespace EasyFarm.Classes
     public class Executor
     {
         private readonly IMemoryAPI _fface;
+        public String LastCommand { get; set; }
 
         public Executor(IMemoryAPI fface)
         {
@@ -146,7 +147,7 @@ namespace EasyFarm.Classes
                 }                             
 
                 if (Math.Abs(previous - _fface.Player.CastPercentEx) > .5) return true;
-                _fface.Windower.SendString(command);
+                SendCommand(command);
                 TimeWaiter.Pause(500);
             }
 
@@ -180,9 +181,15 @@ namespace EasyFarm.Classes
 
         private bool CastAbility(BattleAbility ability)
         {
-            _fface.Windower.SendString(ability.Command);
+            SendCommand(ability.Command);
             TimeWaiter.Pause(100);
             return true;
+        }
+
+        private void SendCommand(String command)
+        {
+            LastCommand = command;
+            _fface.Windower.SendString(command);
         }
 
         private bool CastSpell(BattleAbility ability)

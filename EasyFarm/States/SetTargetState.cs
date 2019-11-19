@@ -1,12 +1,12 @@
 ﻿// ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-// 
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,50 +15,47 @@
 // You should have received a copy of the GNU General Public License
 // If not, see <http://www.gnu.org/licenses/>.
 // ///////////////////////////////////////////////////////////////////
-
 using System;
 using System.Linq;
 using EasyFarm.Classes;
+using EasyFarm.Context;
 using EasyFarm.UserSettings;
 using EasyFarm.ViewModels;
 
 namespace EasyFarm.States
 {
-    public class SetTargetState : AgentState
+    public class SetTargetState : BaseState
     {
-        private readonly UnitService _units;
-        private DateTime _lastTargetCheck = DateTime.Now;
+        private DateTime? _lastTargetCheck;
 
-        public SetTargetState(StateMemory memory) : base(memory)
-        {
-            _units = new UnitService(EliteApi);
-        }
-
-        public override bool Check()
+        public override bool Check(IGameContext context)
         {
             // Currently fighting, do not change target. 
-            if (!UnitFilters.MobFilter(EliteApi, Target, Config))
+            if (!context.Target.IsValid)
             {
                 // Still not time to update for new target. 
-                if (DateTime.Now < _lastTargetCheck.AddSeconds(Constants.UnitArrayCheckRate)) return false;
+                if (!ShouldCheckTarget()) return false;
 
                 // First get the first mob by distance.
-                var mobs = _units.MobArray.Where(x => UnitFilters.MobFilter(EliteApi, x, Config))
-                    .OrderByDescending(x => x.PartyClaim)
-                    .ThenByDescending(x => x.HasAggroed)
-                    .ThenBy(x => x.Distance)
-                    .ToList();
+                var mobs = context.Units.Where(x => x.IsValid).ToList();
+                mobs = TargetPriority.Prioritize(mobs).ToList();
 
-                // Set our new target at the end so that we don't accidentaly cast on a new target.
-                Target = mobs.FirstOrDefault();
+                // Set our new target at the end so that we don't accidentally cast on a new target.
+                context.Target = mobs.FirstOrDefault() ?? new NullUnit();
 
                 // Update last time target was updated. 
                 _lastTargetCheck = DateTime.Now;
 
-                if (Target != null) LogViewModel.Write("Now targeting " + Target.Name + " : " + Target.Id);
+                if (context.Target.IsValid) LogViewModel.Write("Now targeting " + context.Target.Name + " : " + context.Target.Id);
             }
 
             return false;
+        }
+
+        private bool ShouldCheckTarget()
+        {
+            if (_lastTargetCheck == null) return true;
+            return DateTime.Now >= _lastTargetCheck.Value.AddSeconds(Constants.UnitArrayCheckRate);
         }
     }
 }

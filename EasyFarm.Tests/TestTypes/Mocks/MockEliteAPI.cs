@@ -1,31 +1,32 @@
-﻿using System.Collections.Generic;
+﻿// ///////////////////////////////////////////////////////////////////
+// This file is a part of EasyFarm for Final Fantasy XI
+// Copyright (C) 2013 Mykezero
+//  
+// EasyFarm is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//  
+// EasyFarm is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// If not, see <http://www.gnu.org/licenses/>.
+// ///////////////////////////////////////////////////////////////////
+using System.Collections.Generic;
 using System.Linq;
 using EasyFarm.UserSettings;
 using EliteMMO.API;
 using MemoryAPI;
 using MemoryAPI.Chat;
 using MemoryAPI.Navigation;
-using MemoryAPI.Resources;
 using MemoryAPI.Windower;
 using StatusEffect = MemoryAPI.StatusEffect;
 
 namespace EasyFarm.Tests.TestTypes.Mocks
 {
-    /// <summary>
-    /// A fake implementation of the EliteAPI which switches state based on messages passed to it.
-    /// </summary>
-    /// <remarks>
-    /// We'll use this class to more accurately test the game state. The idea here is that we don't
-    /// want to run the full game for our testing since the tests would take forever to run, and
-    /// would break with the slightest changes in the game client.
-    ///
-    /// Instead, we'll use a mock object that switches state based on how the client interacts with
-    /// this object. If the program sends the /attack on command, we'll update the mock's state for
-    /// the player to Status.Fighting.
-    ///
-    /// This way, we can test the states from end to end, without bootstraping the game and all of
-    /// its dependencies.
-    /// </remarks>
     public class MockEliteAPI
     {
         public MockEliteAPI()
@@ -38,7 +39,12 @@ namespace EasyFarm.Tests.TestTypes.Mocks
             Target = new MockTargetTools();
             PartyMember = new Dictionary<byte, MockPartyMemberTools>()
             {
-                {0, new MockPartyMemberTools()}
+                {0, new MockPartyMemberTools()},
+                {1, new MockPartyMemberTools()},
+                {2, new MockPartyMemberTools()},
+                {3, new MockPartyMemberTools()},
+                {4, new MockPartyMemberTools()},
+                {5, new MockPartyMemberTools()}
             };
             Chat = new MockChatTools();
         }
@@ -47,7 +53,7 @@ namespace EasyFarm.Tests.TestTypes.Mocks
         public MockNPCTools NPC { get; set; }
         public Dictionary<byte, MockPartyMemberTools> PartyMember { get; set; }
         public MockPlayerTools Player { get; set; }
-        public ITargetTools Target { get; set; }
+        public MockTargetTools Target { get; set; }
         public MockTimerTools Timer { get; set; }
         public MockWindowerTools Windower { get; set; }
         public IChatTools Chat { get; set; }
@@ -70,9 +76,13 @@ namespace EasyFarm.Tests.TestTypes.Mocks
 
     public class MockTargetTools : ITargetTools
     {
+        public int LastTargetID { get; set; }
+
         public int ID { get; set; }
+
         public bool SetNPCTarget(int index)
         {
+            LastTargetID = index;
             return true;
         }
     }
@@ -304,34 +314,5 @@ namespace EasyFarm.Tests.TestTypes.Mocks
         public Job Job { get; set; }
         public Job SubJob { get; set; }
         public NpcType NpcType { get; set; }
-    }
-
-    /// <summary>
-    /// Allow <see cref="MockEliteAPI"/> to have more flexibility in using the mock version of the
-    /// IMemoryAPI properties.
-    /// </summary>
-    public class MockEliteAPIAdapter : IMemoryAPI
-    {
-        public MockEliteAPIAdapter(MockEliteAPI mockEliteAPI)
-        {
-            Player = mockEliteAPI.Player;
-            Windower = mockEliteAPI.Windower;
-            Chat = mockEliteAPI.Chat;
-            NPC = mockEliteAPI.NPC;
-            Navigator = mockEliteAPI.Navigator;
-            PartyMember = mockEliteAPI.PartyMember.ToDictionary(x => x.Key, x => (IPartyMemberTools) x.Value);
-            Target = mockEliteAPI.Target;
-            Timer = mockEliteAPI.Timer;
-        }
-
-        public INavigatorTools Navigator { get; set; }
-        public INPCTools NPC { get; set; }
-        public Dictionary<byte, IPartyMemberTools> PartyMember { get; set; }
-        public IPlayerTools Player { get; set; }
-        public ITargetTools Target { get; set; }
-        public ITimerTools Timer { get; set; }
-        public IWindowerTools Windower { get; set; }
-        public IChatTools Chat { get; set; }
-        public IResourcesTools Resource { get; set; }
     }
 }

@@ -1,12 +1,12 @@
 // ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-// 
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,12 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // If not, see <http://www.gnu.org/licenses/>.
 // ///////////////////////////////////////////////////////////////////
-
 using System;
 using System.Collections.Generic;
 using EasyFarm.Classes;
 using EasyFarm.Infrastructure;
-using EasyFarm.States;
 using EasyFarm.Tests.TestTypes.Mocks;
 using EasyFarm.UserSettings;
 using MemoryAPI;
@@ -29,33 +27,14 @@ namespace EasyFarm.Tests.TestTypes
 {
     public class AbstractTestBase
     {
-        public IConfig MockConfig;
+        protected readonly MockGameAPI MockGameAPI;
 
-        public readonly MockEliteAPI MockEliteAPI;
+        protected HashSet<Type> Events { get; set; } = new HashSet<Type>();
 
-        public HashSet<Type> Events { get; set; } = new HashSet<Type>();
-
-        public AbstractTestBase()
+        protected AbstractTestBase()
         {
-            MockConfig = new MockConfig {BattleLists = new BattleLists(Config.Instance.BattleLists)};
-            MockEliteAPI = MockEliteAPI.Create();
+            MockGameAPI = new MockGameAPI();
             StartRecordingEvents();
-        }
-
-        /// <summary>
-        /// Create new state memory with <see cref="MockEliteAPI"/> and <see cref="MockConfig"/>.
-        /// </summary>
-        /// <returns></returns>
-        public StateMemory CreateStateMemory(bool targetValid = true)
-        {
-            return new StateMemory(MockEliteAPI.AsMemoryApi())
-            {
-                Config = MockConfig,
-                UnitFilters = new MockUnitFilters()
-                {
-                    Result = targetValid
-                }
-            };
         }
 
         private void StartRecordingEvents()
@@ -74,12 +53,7 @@ namespace EasyFarm.Tests.TestTypes
             return battleAbility;
         }
 
-        public static IUnit FindNonValidUnit()
-        {
-            return new MockUnit();
-        }
-
-        public static IUnit FindUnit()
+        protected static IUnit FindUnit()
         {
             var unit = new MockUnit
             {
@@ -98,7 +72,8 @@ namespace EasyFarm.Tests.TestTypes
                 NpcType = NpcType.Mob,
                 PartyClaim = false,
                 Status = Status.Standing,
-                YDifference = 2.0
+                YDifference = 2.0,
+                IsValid = true
             };
 
             return unit;

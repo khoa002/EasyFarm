@@ -1,34 +1,30 @@
 ﻿// ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-//
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // If not, see <http://www.gnu.org/licenses/>.
 // ///////////////////////////////////////////////////////////////////
-
 using EasyFarm.Classes;
 using EasyFarm.Infrastructure;
 using EasyFarm.Logging;
 using EasyFarm.Persistence;
 using EasyFarm.UserSettings;
 using GalaSoft.MvvmLight.Command;
-using MahApps.Metro.Controls.Dialogs;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using EasyFarm.Handlers;
-using MahApps.Metro.Controls;
 using Application = System.Windows.Application;
 
 namespace EasyFarm.ViewModels
@@ -38,8 +34,7 @@ namespace EasyFarm.ViewModels
     /// </summary>
     public class MasterViewModel : ViewModelBase
     {
-        private readonly LibraryUpdater _updater;
-        private readonly IDialogCoordinator _dialogCoordinator;
+        private readonly EventMessenger _events;
 
         /// <summary>
         ///     Saves and loads settings from file.
@@ -56,13 +51,9 @@ namespace EasyFarm.ViewModels
         /// </summary>
         public IViewModel ViewModel { get; set; }
 
-        public MasterViewModel(
-            MainViewModel mainViewModel,
-            LibraryUpdater updater,
-            IDialogCoordinator dialogCoordinator)
+        public MasterViewModel(MainViewModel mainViewModel, EventMessenger events)
         {
-            _updater = updater;
-            _dialogCoordinator = dialogCoordinator;
+            _events = events;
             ViewModel = mainViewModel;
 
             _settingsManager = new SettingsManager("eup", "EasyFarm User Preference");
@@ -76,8 +67,8 @@ namespace EasyFarm.ViewModels
             ExitCommand = new RelayCommand(Exit);
             SaveCommand = new RelayCommand(Save);
             LoadCommand = new RelayCommand(Load);
-            SelectProcessCommand = new RelayCommand(async () => await SelectProcess());
-            LoadedCommand = new RelayCommand(async () => await OnLoad());
+            SelectProcessCommand = new RelayCommand(SelectProcess);
+            LoadedCommand = new RelayCommand(OnLoad);
         }
 
         private string _mainWindowTitle;
@@ -245,11 +236,9 @@ namespace EasyFarm.ViewModels
         /// <summary>
         ///     Selects a process to user for this application.
         /// </summary>
-        private async Task SelectProcess()
+        private void SelectProcess()
         {
-            MetroWindow window = (MetroWindow)Application.Current.MainWindow;
-            SelectCharacterRequestHandler handler = new SelectCharacterRequestHandler(window);
-            await handler.Handle();
+            _events.Fire(new SelectCharacterEvent());
         }
 
         /// <summary>
@@ -260,22 +249,11 @@ namespace EasyFarm.ViewModels
             Application.Current.Shutdown();
         }
 
-        public async Task OnLoad()
+        public void OnLoad()
         {
             MainWindowTitle = "EasyFarm";
             StatusBarText = "";
-
-            if (_updater.HasUpdate())
-            {
-                var showDialogResult = await _dialogCoordinator.ShowMessageAsync(
-                    Application.Current.MainWindow.DataContext,
-                    "Update EliteAPI",
-                    "Would you like to update EliteAPI to its newest version?",
-                    MessageDialogStyle.AffirmativeAndNegative);
-
-                if (showDialogResult == MessageDialogResult.Affirmative)
-                    _updater.Update();
-            }
+            _events.Fire(new LoadedEvent());
         }
     }
 }

@@ -1,12 +1,12 @@
 // ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-// 
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -37,11 +37,11 @@ namespace EasyFarm.Tests.Classes
             BattleAbility battleAbility = FindAbility();
             battleAbility.Name = "test";
             battleAbility.AbilityType = AbilityType.Magic;
-            Executor sut = new Executor(MockEliteAPI.AsMemoryApi());
+            Executor sut = new Executor(MockGameAPI);
             // Exercise system
             sut.UseBuffingActions(new List<BattleAbility> { battleAbility });
             // Verify outcome
-            Assert.Equal("/magic test <t>", MockEliteAPI.Windower.LastCommand);
+            Assert.Equal("/magic test <t>", MockGameAPI.Mock.Windower.LastCommand);
             // Teardown
         }
 
@@ -54,18 +54,18 @@ namespace EasyFarm.Tests.Classes
             battleAbility.AbilityType = AbilityType.Magic;
             battleAbility.Command = "/magic test <t>";
             IUnit unit = FindUnit();
-            Executor sut = new Executor(MockEliteAPI.AsMemoryApi());
+            Executor sut = new Executor(MockGameAPI);
             // Exercise system
             sut.UseTargetedActions(new List<BattleAbility> { battleAbility }, unit);
             // Verify outcome
-            Assert.Equal("/magic test <t>", MockEliteAPI.Windower.LastCommand);
+            Assert.Equal("/magic test <t>", MockGameAPI.Mock.Windower.LastCommand);
             // Teardown
         }
 
         [Fact]
         public void UseBuffingActionsWithNullActionListThrows()
         {
-            Executor sut = new Executor(MockEliteAPI.AsMemoryApi());
+            Executor sut = new Executor(MockGameAPI);
             Exception result = Record.Exception(() => sut.UseBuffingActions(null));
             Assert.IsType<ArgumentNullException>(result);
         }

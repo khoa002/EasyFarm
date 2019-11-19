@@ -1,12 +1,12 @@
 ﻿// ///////////////////////////////////////////////////////////////////
 // This file is a part of EasyFarm for Final Fantasy XI
-// Copyright (C) 2013-2017 Mykezero
-// 
+// Copyright (C) 2013 Mykezero
+//  
 // EasyFarm is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//  
 // EasyFarm is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // If not, see <http://www.gnu.org/licenses/>.
 // ///////////////////////////////////////////////////////////////////
+using System;
+
 namespace EasyFarm.UserSettings
 {
     public class Constants
@@ -72,11 +74,13 @@ namespace EasyFarm.UserSettings
         /// <summary>
         /// The maximum priority for states in the FSM. 
         /// </summary>
-        public const int MaxPriority = int.MaxValue;
+        public const int MaxPriority = Int32.MaxValue;
 
         /// <summary>
         /// The maximum number of trusts allowed in the party.
         /// </summary>
         public static int TrustPartySize = 5;
+
+        public const string SetTargetCursor = "/ta <t>";
     }
 }
